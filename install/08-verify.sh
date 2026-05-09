@@ -5,6 +5,10 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_common.sh"
 require_macos
 
+STEP_NAME="08-verify"
+step_start
+step_trap_err
+
 ok=0; fail=0
 check() {
   local label="$1"
@@ -37,8 +41,10 @@ check "Hermes .env present"     "[[ -f '$HERMES_DIR/.env' ]]"
 echo
 if [[ $fail -eq 0 ]]; then
   log_ok "All $ok checks passed."
+  step_complete "$(jq -nc --argjson ok "$ok" --argjson fail "$fail" '{passed: true, checks_ok: $ok, checks_failed: $fail}')"
 else
   log_warn "$ok passed, $fail failed."
   log "Re-run the failing step's script (e.g., ./install/04-hermes.sh) to fix."
+  STEP_ERROR_CODE="component_missing"
   exit 1
 fi

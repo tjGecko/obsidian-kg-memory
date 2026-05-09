@@ -6,8 +6,13 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_common.sh"
 require_macos
 
+STEP_NAME="05-aqua-voice"
+step_start
+step_trap_err
+
 if [[ -d "/Applications/Aqua Voice.app" ]]; then
   log_skip "Aqua Voice already installed at /Applications/Aqua Voice.app"
+  step_skip "already installed at /Applications/Aqua Voice.app"
   exit 0
 fi
 
@@ -21,15 +26,19 @@ SCRATCH="$INSTALL_DIR/.scratch"
 ensure_dir "$SCRATCH"
 DMG_PATH="$SCRATCH/Aqua-Voice.dmg"
 
+STEP_ERROR_CODE="download_fail"
 log "Downloading Aqua Voice for $(arch)"
 curl -fL --progress-bar -o "$DMG_PATH" "$DMG_URL"
+STEP_ERROR_CODE=""
 
+STEP_ERROR_CODE="dmg_mount_fail"
 log "Mounting $DMG_PATH"
 MOUNT_POINT="$(hdiutil attach -nobrowse -quiet "$DMG_PATH" | tail -1 | awk '{$1=$1; for (i=3;i<=NF;i++) printf "%s ", $i; print ""}' | sed 's/ *$//')"
 if [[ -z "$MOUNT_POINT" || ! -d "$MOUNT_POINT" ]]; then
   log_err "Failed to determine mount point for the .dmg"
   exit 1
 fi
+STEP_ERROR_CODE=""
 
 APP_SRC="$(find "$MOUNT_POINT" -maxdepth 2 -name 'Aqua Voice.app' -print -quit || true)"
 if [[ -z "$APP_SRC" ]]; then
@@ -63,3 +72,5 @@ cat <<EOF
     4. Sign in with your Aqua Voice account (free tier is sufficient to start).
 
 EOF
+
+step_complete '{"installed": true, "path": "/Applications/Aqua Voice.app", "permissions_required": ["microphone", "accessibility", "input_monitoring"]}'

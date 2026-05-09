@@ -6,12 +6,17 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_common.sh"
 require_macos
 
+STEP_NAME="07-kg-init"
+step_start
+step_trap_err
+
 # ── Copy skills into Claude Code's skills dir ──────────────────────────────
 ensure_dir "$CLAUDE_SKILLS"
 SKILL_SRC="$SKILLS_DIR/kg-memory"
 SKILL_DST="$CLAUDE_SKILLS/kg-memory"
 
 if [[ ! -d "$SKILL_SRC" ]]; then
+  STEP_ERROR_CODE="skill_copy_fail"
   log_err "Source skill dir not found: $SKILL_SRC"
   exit 1
 fi
@@ -89,3 +94,7 @@ cat <<EOF
     /kg-add-note "this is my first captured thought"
 
 EOF
+
+step_complete "$(jq -nc \
+  --arg vault "$KG_VAULT" --arg skills "$SKILL_DST" --arg state "$STATE" \
+  '{vault: $vault, skills_path: $skills, state_path: $state, installed: true}')"

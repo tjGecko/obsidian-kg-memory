@@ -6,6 +6,10 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_common.sh"
 require_macos
 
+STEP_NAME="06-obsidian"
+step_start
+step_trap_err
+
 # ── Obsidian app ───────────────────────────────────────────────────────────
 if [[ -d "/Applications/Obsidian.app" ]]; then
   log_skip "Obsidian already installed"
@@ -96,3 +100,8 @@ cat <<EOF
   Open Obsidian and select this vault. Trust the plugin when prompted.
 
 EOF
+
+step_complete "$(jq -nc \
+  --arg vault "$KG_VAULT" \
+  --argjson dataview_installed "$([[ -f "$KG_VAULT/.obsidian/plugins/dataview/main.js" ]] && echo true || echo false)" \
+  '{installed: true, vault: $vault, dataview_installed: $dataview_installed}')"

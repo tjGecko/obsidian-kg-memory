@@ -5,12 +5,18 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_common.sh"
 require_macos
 
+STEP_NAME="02-claude-code"
+step_start
+step_trap_err
+
 if have_cmd claude; then
   log_skip "claude already installed: $(claude --version 2>/dev/null || echo 'unknown version')"
 else
+  STEP_ERROR_CODE="npm_install_fail"
   log "npm install -g @anthropic-ai/claude-code"
   npm install -g @anthropic-ai/claude-code
   log_ok "Claude Code installed: $(claude --version 2>/dev/null || echo 'verify with: claude --version')"
+  STEP_ERROR_CODE=""
 fi
 
 # Ensure ~/.claude exists for skills + settings.
@@ -39,3 +45,8 @@ cat <<EOF
   To start: run \`claude\` in any directory.
 
 EOF
+
+step_complete "$(jq -nc \
+  --arg version "$(claude --version 2>/dev/null || echo "")" \
+  --arg path "$(command -v claude || echo "")" \
+  '{installed: true, version: $version, path: $path}')"

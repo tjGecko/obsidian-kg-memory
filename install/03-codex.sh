@@ -5,12 +5,18 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_common.sh"
 require_macos
 
+STEP_NAME="03-codex"
+step_start
+step_trap_err
+
 if have_cmd codex; then
   log_skip "codex already installed: $(codex --version 2>/dev/null || echo 'unknown version')"
 else
+  STEP_ERROR_CODE="npm_install_fail"
   log "npm install -g @openai/codex"
   npm install -g @openai/codex
   log_ok "Codex CLI installed: $(codex --version 2>/dev/null || echo 'verify with: codex --version')"
+  STEP_ERROR_CODE=""
 fi
 
 ensure_dir "$CODEX_DIR"
@@ -45,3 +51,9 @@ else
 
 EOF
 fi
+
+step_complete "$(jq -nc \
+  --arg version "$(codex --version 2>/dev/null || echo "")" \
+  --arg path "$(command -v codex || echo "")" \
+  --argjson openai_key_set "$([[ -n "${OPENAI_API_KEY:-}" ]] && echo true || echo false)" \
+  '{installed: true, version: $version, path: $path, openai_key_in_env: $openai_key_set}')"

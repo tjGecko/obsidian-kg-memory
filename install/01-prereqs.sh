@@ -5,6 +5,10 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_common.sh"
 require_macos
 
+STEP_NAME="01-prereqs"
+step_start
+step_trap_err
+
 # ── Homebrew ───────────────────────────────────────────────────────────────
 if have_cmd brew; then
   log_skip "Homebrew already installed"
@@ -89,3 +93,9 @@ else
 fi
 
 log_ok "Prereqs complete"
+
+step_complete "$(jq -nc \
+  --arg node "$(node -v 2>/dev/null || echo "")" \
+  --arg python "$(python3.11 --version 2>/dev/null || echo "")" \
+  --arg brew "$(brew --version 2>/dev/null | head -1 || echo "")" \
+  '{node: $node, python: $python, brew: $brew, installed: true}')"
