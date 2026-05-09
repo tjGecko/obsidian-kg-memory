@@ -16,15 +16,20 @@ The script is idempotent — safe to re-run. It detects what's already installed
 
 | Step | Script | What it does |
 |---|---|---|
-| 0 | `install-mac.sh` | Orchestrator. Detects shell, sources steps in order, prints a summary. |
+| 0 | `install-mac.sh` | Orchestrator. Runs preflight, caches sudo with keep-alive, sources steps in order, emits a final summary JSON. |
+| pre | `preflight.sh` | Fail-fast checks (macOS ≥13, arch, ≥10 GB disk, network reachability, admin rights). JSON output. |
 | 1 | `01-prereqs.sh` | Installs Homebrew (if missing), Xcode CLT, Node 20 LTS, Python 3.11, git, jq. |
+| 1.5 | `01.5-touchid-sudo.sh` | Enables Touch ID for sudo via `/etc/pam.d/sudo` (backed up first). Eliminates ~80% of password prompts during install. Skipped if no Touch ID hardware. |
 | 2 | `02-claude-code.sh` | `npm install -g @anthropic-ai/claude-code` — installs Claude Code. |
-| 3 | `03-codex.sh` | `npm install -g @openai/codex` — installs OpenAI Codex CLI. Prompts for `OPENAI_API_KEY` if not set. |
+| 3 | `03-codex.sh` | `npm install -g @openai/codex` — installs OpenAI Codex CLI. Detects `OPENAI_API_KEY` if set. |
 | 4 | `04-hermes.sh` | Runs the official Hermes one-liner installer from NousResearch. Wires Hermes to use the Codex provider with `gpt-5.5`. |
-| 5 | `05-aqua-voice.sh` | Downloads the architecture-correct Aqua Voice `.dmg`, mounts, and copies to `/Applications`. Prompts user to grant Accessibility + Microphone permissions on first launch. |
+| 5 | `05-aqua-voice.sh` | Downloads the architecture-correct Aqua Voice `.dmg`, mounts, and copies to `/Applications`. |
 | 6 | `06-obsidian.sh` | `brew install --cask obsidian`. Creates the vault at `~/Documents/KG-Vault` (configurable). Installs the Dataview community plugin. |
-| 7 | `07-kg-init.sh` | Copies `skills/kg-memory/` to `~/.claude/skills/`, runs `/kg-init` to seed the vault, drops example config files into `~/.hermes/` and `~/.codex/`. |
-| 8 | `08-verify.sh` | Sanity check — runs `claude --version`, `codex --version`, `hermes --version`, opens the vault, lists installed skills. |
+| 7 | `07-kg-init.sh` | Copies `skills/kg-memory/` to `~/.claude/skills/`, seeds the vault, drops example config files into `~/.hermes/` and `~/.codex/`. |
+| 8 | `08-verify.sh` | Sanity check — runs `claude --version`, `codex --version`, `hermes --version`, asserts vault + skills + Dataview present. |
+| 9 | `09-permissions.sh` | Bundles Aqua Voice's three Privacy & Security grants (Microphone, Accessibility, Input Monitoring) into one sequenced phase with deep-links and audio cues. Skip with `OBSIDIAN_KG_SKIP_TCC=1`. |
+
+Each step writes a JSON status file to `install/.state/<step>.json`. The orchestrator emits a final summary at `install/.state/_summary.json`. See [`AGENTS.md`](AGENTS.md) and [`docs/AGENT-DEBUG.md`](docs/AGENT-DEBUG.md) for the schema and recovery patterns.
 
 ## Running individual steps
 
@@ -69,6 +74,22 @@ Removes Claude Code, Codex, Hermes, and Obsidian. Leaves the vault at `~/Documen
 ## Manual install reference
 
 If a script fails or you want to install something by hand, see [`docs/MANUAL-INSTALL.md`](docs/MANUAL-INSTALL.md) for the underlying commands each script runs.
+
+## Running headless / under an agent
+
+For non-interactive installs (CI, agent-driven, no human at the keyboard):
+
+```bash
+OBSIDIAN_KG_NONINTERACTIVE=1 OBSIDIAN_KG_SKIP_TCC=1 ./install/install-mac.sh
+```
+
+This skips every confirm prompt and the manual permissions phase. Aqua Voice will be installed but won't have its Privacy & Security permissions — re-run `./install/09-permissions.sh` interactively when a human is available.
+
+For agent-readable state, point the agent at:
+- `AGENTS.md` — execution protocol
+- `install/.state/*.json` — per-step status
+- `install/.state/_summary.json` — final result
+- `docs/AGENT-DEBUG.md` — failure-code recovery table
 
 ## Troubleshooting
 
