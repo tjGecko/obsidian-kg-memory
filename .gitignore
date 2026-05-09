@@ -1,0 +1,24 @@
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Local secrets — never commit
+.env
+.env.local
+*.key
+*.pem
+hermes-config.local.yaml
+codex-config.local.json
+claude-settings.local.json
+
+# Local KG vault content (only the skill definitions live here)
+vault/
+local-kg/
+
+# Install scratch
+install/.scratch/
+install/*.dmg
+install/*.pkg

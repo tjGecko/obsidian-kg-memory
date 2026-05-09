@@ -1,0 +1,7 @@
+{
+  "model": "gpt-5.5",
+  "provider": "openai",
+  "approval_mode": "suggest",
+  "notify_on_approval": true,
+  "shell_command_timeout_ms": 120000
+}

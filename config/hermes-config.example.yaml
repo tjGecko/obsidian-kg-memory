@@ -1,0 +1,46 @@
+# Hermes Agent — example config
+# Path: ~/.hermes/config.yaml
+#
+# Mirrors the Magnus reference setup with a single-user/single-machine default
+# (api_server and webhook are off — re-enable only if integrating Hermes into
+# another tool that needs an OpenAI-compatible local endpoint).
+
+model:
+  default: gpt-5.5
+  provider: openai-codex
+  base_url: ""           # empty = default provider endpoint
+
+agent:
+  reasoning_effort: medium
+  max_turns: 90
+  tool_use_enforcement: auto
+
+delegation:
+  model: ""              # empty = inherit from model.default
+  provider: ""
+
+# Auxiliary providers — "auto" lets Hermes pick the right backend per task.
+auxiliary_providers:
+  vision: auto
+  web_extract: auto
+  compression: auto
+  session_search: auto
+  skills_hub: auto
+  approval: auto
+  mcp: auto
+  title_generation: auto
+  curator: auto
+
+# Local server features — disabled for single-user use.
+# Enable if you want Hermes to expose an OpenAI-compatible API on your machine.
+webhook:
+  enabled: false
+  host: 127.0.0.1
+  port: 8765
+
+api_server:
+  enabled: false
+  host: 127.0.0.1
+  port: 8642
+  model_name: hermes-local
+  cors_origins: []
